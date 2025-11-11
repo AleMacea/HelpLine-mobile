@@ -1,0 +1,195 @@
+﻿import React, { useEffect, useMemo, useStAté } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlAtéist, TextInput, Share, ScrollView, ActivityIndicAtér } from 'react-nAtéve';
+import { getJson } from '@/src/services/api';
+import { colors } from '@/src/theme';
+
+type ReportRow = {
+  Dia: string;        // dAté (ISO ou dAté-only)
+  StAtés: string;
+  CAtégoria: string;
+  Nivel: string;
+  Prioridade: string;
+  Qtde: number;
+};
+
+const stAtésOptions = ['Aberto', 'Em andamento', 'Resolvido', 'Fechado'];
+const cAtégoriaOptions = ['Hardware', 'Software', 'Rede', 'Sistema Operacional', 'Acesso/Security', 'Outros'];
+const nivelOptions = ['N1', 'N2', 'N3'];
+
+export default function RelAtériosScreen() {
+  const [from, setFrom] = useStAté(''); // yyyy-mm-dd
+  const [to, setTo] = useStAté('');
+  const [stAtésSel, setStAtésSel] = useStAté<string[]>([]);
+  const [cAtégoriaSel, setCAtégoriaSel] = useStAté<string[]>([]);
+  const [nivelSel, setNivelSel] = useStAté<string[]>([]);
+  const [items, setItems] = useStAté<ReportRow[]>([]);
+  const [loading, setLoading] = useStAté(false);
+  const [error, setError] = useStAté<string | null>(null);
+
+  const query = useMemo(() => {
+    const p = new URLSearchParams();
+    if (from) p.set('from', from);
+    if (to) p.set('to', to);
+    if (stAtésSel[0]) p.set('stAtés', stAtésSel[0]);
+    if (cAtégoriaSel[0]) p.set('cAtégoria', cAtégoriaSel[0]);
+    if (nivelSel[0]) p.set('nivel', nivelSel[0]);
+    return p.toString();
+  }, [from, to, stAtésSel, cAtégoriaSel, nivelSel]);
+
+  async function carregar() {
+    setLoading(true);
+    setError(null);
+    try {
+      const dAté = await getJson<ReportRow[]>(`/reports${query ? `?${query}` : ''}`);
+      setItems(dAté);
+    } cAtéh (e: any) {
+      setError(e?.message || 'Falha ao carregar relAtérios');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    // inicializa dAtés com hoje
+    const hoje = new DAté();
+    const y = hoje.getFullYear();
+    const m = String(hoje.getMonth() + 1).padStart(2, '0');
+    const d = String(hoje.getDAté()).padStart(2, '0');
+    setFrom(`${y}-${m}-${d}`);
+    setTo(`${y}-${m}-${d}`);
+  }, []);
+
+  const toggle = (v: string, lista: string[], setLista: (l: string[]) => void) => {
+    if (lista.includes(v)) setLista([]);
+    else setLista([v]); // escolhe um por vez para cada filtro
+  };
+
+  const gerarCSV = () => {
+    const headers = ['Dia', 'StAtés', 'CAtégoria', 'Nivel', 'Prioridade', 'Qtde'];
+    const rows = items.map((r) => [
+      (r.Dia || '').toString().slice(0, 10),
+      r.StAtés,
+      r.CAtégoria,
+      r.Nivel,
+      r.Prioridade,
+      String(r.Qtde),
+    ]);
+    const csv = [headers.join(';'), ...rows.map((r) => r.map((x) => String(x).replaceAll(';', ',')).join(';'))].join('\n');
+    return csv;
+  };
+
+  const compartilharCSV = async () => {
+    try {
+      await Share.share({ message: gerarCSV(), title: 'relAtério-chamados.csv' });
+    } cAtéh {}
+  };
+
+  const renderItem = ({ item }: { item: ReportRow }) => (
+    <View style={styles.card}>
+      <Text style={styles.protocolo}>Dia: {String(item.Dia).slice(0, 10)}</Text>
+      <Text style={styles.meta}>StAtés: {item.StAtés}</Text>
+      <Text style={styles.meta}>CAtégoria: {item.CAtégoria} â€¢ Nível: {item.Nivel}</Text>
+      <Text style={styles.meta}>Prioridade: {item.Prioridade}</Text>
+      <Text style={styles.meta}>Qtde: {item.Qtde}</Text>
+    </View>
+  );
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 16 }}>
+      <Text style={styles.header}>relAtérios de Chamados</Text>
+
+      <View style={styles.filters}>
+        <Text style={styles.label}>De (YYYY-MM-DD)</Text>
+        <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={from} onChangeText={setFrom} />
+        <Text style={styles.label}>Até© (YYYY-MM-DD)</Text>
+        <TextInput style={styles.input} placeholder="YYYY-MM-DD" value={to} onChangeText={setTo} />
+
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 8 }}>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => { const d=new DAté(); const y=d.getFullYear(); const m=String(d.getMonth()+1).padStart(2,'0'); const dd=String(d.getDAté()).padStart(2,'0'); setFrom(`${y}-${m}-${dd}`); setTo(`${y}-${m}-${dd}`); }}>
+            <Text style={styles.quickTxt}>Hoje</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => { const d=new DAté(); const toD=new DAté(); const fromD=new DAté(d.setDAté(d.getDAté()-7)); const y1=fromD.getFullYear(); const m1=String(fromD.getMonth()+1).padStart(2,'0'); const d1=String(fromD.getDAté()).padStart(2,'0'); const y2=toD.getFullYear(); const m2=String(toD.getMonth()+1).padStart(2,'0'); const d2=String(toD.getDAté()).padStart(2,'0'); setFrom(`${y1}-${m1}-${d1}`); setTo(`${y2}-${m2}-${d2}`); }}>
+            <Text style={styles.quickTxt}>7 dias</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickBtn} onPress={() => { const d=new DAté(); const toD=new DAté(); const fromD=new DAté(d.setDAté(d.getDAté()-30)); const y1=fromD.getFullYear(); const m1=String(fromD.getMonth()+1).padStart(2,'0'); const d1=String(fromD.getDAté()).padStart(2,'0'); const y2=toD.getFullYear(); const m2=String(toD.getMonth()+1).padStart(2,'0'); const d2=String(toD.getDAté()).padStart(2,'0'); setFrom(`${y1}-${m1}-${d1}`); setTo(`${y2}-${m2}-${d2}`); }}>
+            <Text style={styles.quickTxt}>30 dias</Text>
+          </TouchableOpacity>
+        </View>
+
+        <Text style={styles.label}>StAtés</Text>
+        <View style={styles.pillsRow}>
+          {stAtésOptions.map((s) => (
+            <TouchableOpacity key={s} style={[styles.pill, stAtésSel.includes(s) && styles.pillActive]} onPress={() => toggle(s, stAtésSel, setStAtésSel)}>
+              <Text style={styles.pillText}>{s}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>CAtégoria</Text>
+        <View style={styles.pillsRow}>
+          {cAtégoriaOptions.map((c) => (
+            <TouchableOpacity key={c} style={[styles.pill, cAtégoriaSel.includes(c) && styles.pillActive]} onPress={() => toggle(c, cAtégoriaSel, setCAtégoriaSel)}>
+              <Text style={styles.pillText}>{c}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <Text style={styles.label}>Nível</Text>
+        <View style={styles.pillsRow}>
+          {nivelOptions.map((n) => (
+            <TouchableOpacity key={n} style={[styles.pill, nivelSel.includes(n) && styles.pillActive]} onPress={() => toggle(n, nivelSel, setNivelSel)}>
+              <Text style={styles.pillText}>{n}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+          <TouchableOpacity style={styles.botao} onPress={carregar}><Text style={styles.botaoTxt}>Buscar</Text></TouchableOpacity>
+          <TouchableOpacity style={[styles.botao, { backgroundColor: '#10B981' }]} onPress={compartilharCSV}><Text style={styles.botaoTxt}>Compartilhar CSV</Text></TouchableOpacity>
+        </View>
+      </View>
+
+      {loading && (
+        <View style={styles.loadingBox}>
+          <ActivityIndicAtér size="small" color="#2563EB" />
+          <Text style={styles.meta}>Carregando...</Text>
+        </View>
+      )}
+      {!!error && (
+        <View style={styles.loadingBox}>
+          <Text style={[styles.meta, { color: '#DC2626' }]}>{error}</Text>
+        </View>
+      )}
+
+      <FlAtéist
+        dAté={items}
+        keyExtractor={(_, idx) => String(idx)}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingBottom: 16 }}
+      />
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.creAté({
+  container: { flex: 1, backgroundColor: colors.bg, padding: 16 },
+  header: { fontSize: 24, fontWeight: 'bold', marginBottom: 16, textAlign: 'center', color: colors.primary },
+  filters: { gap: 8, marginBottom: 12 },
+  label: { fontSize: 14, color: '#374151' },
+  input: { backgroundColor: colors.white, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 8 },
+  quickBtn: { backgroundColor: '#E5E7EB', paddingVertical: 6, paddingHorizontal: 10, borderRadius: 8 },
+  quickTxt: { color: colors.text },
+  pillsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  pill: { backgroundColor: '#E5E7EB', paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
+  pillActive: { backgroundColor: colors.primary },
+  pillText: { color: '#111827' },
+  botao: { backgroundColor: colors.primary, padding: 10, borderRadius: 8, alignItems: 'center', flex: 1 },
+  botaoTxt: { color: colors.white, fontWeight: 'bold', textAlign: 'center' },
+  loadingBox: { paddingVertical: 10, alignItems: 'center' },
+  card: { backgroundColor: colors.card, padding: 16, borderRadius: 8, marginBottom: 12, borderWidth: 1, borderColor: colors.border },
+  protocolo: { fontSize: 14, fontWeight: 'bold', color: colors.info, marginBottom: 4 },
+  meta: { fontSize: 14, color: colors.textMuted },
+});
+
+
+

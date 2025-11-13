@@ -120,9 +120,9 @@ const styles = StyleSheet.create({
   header: { fontSize: 24, fontWeight: 'bold', color: colors.primary, marginBottom: 12, textAlign: 'center' },
   sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.textMuted, marginBottom: 8 },
   search: { backgroundColor: colors.white, borderColor: colors.border, borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 12 },
-  pill: { backgroundColor: '#E5E7EB', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, marginRight: 8 },
-  pillActive: { backgroundColor: colors.primary },
-  pillText: { color: colors.text },
+  pill: { backgroundColor: '#F3F4F6', paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, marginRight: 8, borderWidth: 1, borderColor: '#D1D5DB' },
+  pillActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  pillText: { color: '#111827', fontWeight: '600' },
   card: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 10, padding: 14, marginBottom: 10 },
   popCard: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: 10, padding: 12, width: 220, marginRight: 10 },
   cardTitle: { fontSize: 16, fontWeight: '600', color: colors.text },
@@ -136,4 +136,3 @@ const styles = StyleSheet.create({
   btn: { flex: 1, alignItems: 'center', padding: 12, borderRadius: 8 },
   btnText: { color: colors.white, fontWeight: 'bold' },
 });
-

@@ -57,7 +57,7 @@ export default function ChamadosScreen() {
       setItems(data.items);
     } catch (e: any) {
       // Fallback para usuÃ¡rios comuns
-      if (String(e.message || '').startsWith('HTTP 403')) {
+      if (String(e.userMessage || e.message || '').startsWith('HTTP 403')) {
         try {
           const dataMine = await getJson<TicketListResponse>(`/tickets/mine?${query}`);
           setItems(dataMine.items);
@@ -227,4 +227,5 @@ const styles = StyleSheet.create({
   limparBotao: { backgroundColor: '#F87171', padding: 12, borderRadius: 8, flex: 1, alignItems: 'center' },
   limparTexto: { color: colors.white, fontWeight: 'bold' },
 });
+
 

@@ -1,4 +1,4 @@
-﻿import { AppHeader } from '@/src/components/AppHeader';
+import { AppHeader } from '@/src/components/AppHeader';
 import { postJson } from '@/src/services/api';
 import { FaqArticle, getFaq, getPopularFaq } from '@/src/services/faq';
 import { colors } from '@/src/theme';
@@ -8,8 +8,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-
-
 const formatDate = (value?: string) => {
   if (!value) return '';
   try {
@@ -17,6 +15,44 @@ const formatDate = (value?: string) => {
   } catch {
     return value.slice(0, 10);
   }
+};
+
+const fallbackContentByCategory: Record<string, string> = {
+  Rede:
+    'Passos rápidos para voltar a navegar:\n' +
+    '1) Confirme se o Wi-Fi ou cabo estão conectados e desative o modo avião.\n' +
+    '2) Reinicie o roteador (se for home office) e o próprio dispositivo.\n' +
+    '3) Esqueça a rede corporativa e reconecte com o usuário correto.\n' +
+    '4) Desative VPN temporariamente e teste outra rede para comparação.\n' +
+    '5) Se continuar sem internet, anote SSID, mensagem de erro e horário e abra um chamado.',
+  Acesso:
+    'Dicas para recuperar acesso:\n' +
+    '1) Tente redefinir a senha pelo Ctrl+Alt+Del (Windows) conectado na rede ou VPN.\n' +
+    '2) Siga a política: mínimo 8 caracteres com maiúsculas, minúsculas, número e símbolo.\n' +
+    '3) Após alterar, bloqueie e desbloqueie a sessão para replicar no domínio.\n' +
+    '4) Se a conta estiver bloqueada, aguarde 15 minutos e tente novamente.\n' +
+    '5) Persistindo, registre um chamado com print do erro e horário da tentativa.',
+  Software:
+    'Para resolver lentidão ou travamentos:\n' +
+    '1) Reinicie o equipamento e feche apps pesados no Gerenciador de Tarefas.\n' +
+    '2) Verifique uso de CPU, memória e disco; encerre processos que estejam em 100%.\n' +
+    '3) Desative inicialização de apps não essenciais e limpe arquivos temporários.\n' +
+    '4) Conclua atualizações pendentes do Windows/antivírus e reinicie novamente.\n' +
+    '5) Ainda lento? Anote hora, app afetado e prints e abra um chamado.',
+  Hardware:
+    'Checklist de impressão:\n' +
+    '1) Verifique cabos, energia e se há papel/tinta.\n' +
+    '2) Veja se a fila de impressão está pausada e limpe trabalhos travados.\n' +
+    '3) Imprima uma página de teste; se falhar, reinstale ou atualize o driver.\n' +
+    '4) Teste a mesma impressora em outro computador ou outra impressora no seu.\n' +
+    '5) Para suporte, informe modelo, IP (se houver) e a mensagem de erro exibida.',
+};
+
+const buildArticleContent = (article?: FaqArticle | null) => {
+  if (!article) return '';
+  const base = article.content?.trim();
+  if (base) return base;
+  return fallbackContentByCategory[article.category] || 'Estamos atualizando este artigo. Envie detalhes do erro para que possamos ajudar.';
 };
 
 export default function ArtigosScreen() {
@@ -54,10 +90,11 @@ export default function ArtigosScreen() {
     const needle = query.trim().toLowerCase();
     return all.filter((article) => {
       const matchesCategory = !category || article.category === category;
+      const contentText = buildArticleContent(article).toLowerCase();
       const matchesText =
         !needle ||
         article.title.toLowerCase().includes(needle) ||
-        article.content.toLowerCase().includes(needle) ||
+        contentText.includes(needle) ||
         (article.tags || []).some((tag) => tag.toLowerCase().includes(needle));
       return matchesCategory && matchesText;
     });
@@ -91,6 +128,8 @@ export default function ArtigosScreen() {
       </Text>
     </TouchableOpacity>
   );
+
+  const articleContent = buildArticleContent(selected);
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -130,7 +169,7 @@ export default function ArtigosScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.pillRow}
-          style={{flexGrow:0}}
+          style={{ flexGrow: 0 }}
         >
           {chipItems.map((item, index) => {
             const isActive = (category === null && item.value === 'Tudo') || item.value === category;
@@ -162,7 +201,6 @@ export default function ArtigosScreen() {
           />
         </View>
 
-
         <Modal transparent animationType="slide" visible={!!selected} onRequestClose={() => setSelected(null)}>
           <View style={styles.modalOverlay}>
             <View style={styles.modalContainer}>
@@ -172,7 +210,7 @@ export default function ArtigosScreen() {
               <ScrollView>
                 <Text style={styles.modalTitle}>{selected?.title}</Text>
                 <Text style={styles.modalMeta}>{selected?.category}</Text>
-                <Text style={styles.modalContent}>{selected?.content}</Text>
+                <Text style={styles.modalContent}>{articleContent}</Text>
               </ScrollView>
               <View style={styles.modalButtons}>
                 <TouchableOpacity
@@ -206,6 +244,7 @@ export default function ArtigosScreen() {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: colors.bg },
   appHeader: { paddingBottom: 0 },
@@ -272,7 +311,7 @@ const styles = StyleSheet.create({
   pill: {
     backgroundColor: colors.white,
     paddingHorizontal: 12,
-    paddingVertical: 3, // reduz a altura REAL do chip
+    paddingVertical: 3, // reduz a altura real do chip
     borderRadius: 999,
     borderWidth: 1,
     borderColor: colors.border,
@@ -289,7 +328,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontWeight: '600',
     fontSize: 13,
-    lineHeight: 16, // IMPORTANTÍSSIMO para evitar altura extra
+    lineHeight: 16, // importantíssimo para evitar altura extra
   },
 
   pillTextActive: {
@@ -299,7 +338,7 @@ const styles = StyleSheet.create({
   // Lista de artigos
   listContent: {
     paddingTop: 4,
-    paddingBottom: 8, // era 16
+    paddingBottom: 8,
   },
   empty: {
     textAlign: 'center',
@@ -312,7 +351,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 12,
     padding: 14,
-    marginBottom: 8, // era 12
+    marginBottom: 8,
   },
   cardTitle: {
     fontSize: 16,
@@ -383,4 +422,3 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
-

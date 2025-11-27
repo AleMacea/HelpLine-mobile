@@ -315,6 +315,7 @@ export default function ChatbotScreen() {
   const [showContextDetails, setShowContextDetails] = useState(false);
 
   const chatScrollRef = useRef<ScrollView>(null);
+  const typingTasks = useRef(0);
 
   useEffect(() => {
     chatScrollRef.current?.scrollToEnd({ animated: true });
@@ -400,6 +401,28 @@ export default function ChatbotScreen() {
     Keyboard.dismiss();
   };
 
+  const beginTyping = () => {
+    typingTasks.current += 1;
+    setIsTyping(true);
+  };
+
+  const endTyping = () => {
+    typingTasks.current = Math.max(0, typingTasks.current - 1);
+    if (typingTasks.current === 0) setIsTyping(false);
+  };
+
+  const pushBotMessagesWithTyping = (msgs: Message[], delayMs?: number, after?: () => void) => {
+    if (!msgs.length) return;
+    const totalChars = msgs.reduce((acc, m) => acc + m.text.length, 0);
+    const wait = delayMs ?? Math.max(400, Math.min(1400, totalChars * 10));
+    beginTyping();
+    setTimeout(() => {
+      setMessages((prev) => [...prev, ...msgs]);
+      endTyping();
+      after?.();
+    }, wait);
+  };
+
   const TypingIndicator = () => {
     const dotOne = useRef(new Animated.Value(0.2)).current;
     const dotTwo = useRef(new Animated.Value(0.2)).current;
@@ -442,7 +465,7 @@ export default function ChatbotScreen() {
       text: customText ?? 'Qual opcao representa melhor o problema? Toque para selecionar e seguir com algumas perguntas.',
       meta: { kind: 'issue-options', options: flow.issues },
     };
-    setMessages((prev) => [...prev, issueMessage]);
+    pushBotMessagesWithTyping([issueMessage]);
   };
 
   const askPrompt = (prompt: TriagePrompt) => {
@@ -454,7 +477,7 @@ export default function ChatbotScreen() {
     if (prompt.type === 'choice' && prompt.options?.length) {
       promptMessage.meta = { kind: 'prompt-choice', promptId: prompt.id, options: prompt.options };
     }
-    setMessages((prev) => [...prev, promptMessage]);
+    pushBotMessagesWithTyping([promptMessage]);
   };
 
   const finalizeStructuredTriage = (flow: TriageFlow | null, answersSnapshot: Record<string, string>, issueOverride?: string) => {
@@ -466,12 +489,14 @@ export default function ChatbotScreen() {
     const guidanceText = followUpMessageFor(triageCategory);
     const closingId = newMessageId();
     const closingText = 'Caso precise complementar com prints ou passos realizados, escreva aqui. Se precisar de ajuda humana, toque em "Falar com um analista".';
-    setMessages((prev) => [
-      ...prev,
-      { id: newMessageId(), sender: 'bot', text: guidanceText },
-      { id: closingId, sender: 'bot', text: closingText },
-    ]);
-    setPendingFbForId(closingId);
+    pushBotMessagesWithTyping(
+      [
+        { id: newMessageId(), sender: 'bot', text: guidanceText },
+        { id: closingId, sender: 'bot', text: closingText },
+      ],
+      undefined,
+      () => setPendingFbForId(closingId),
+    );
   };
 
   const handlePromptChoiceSelect = (promptId: string, option: string) => {
@@ -541,12 +566,18 @@ export default function ChatbotScreen() {
         ? 'Entendido. Vou fazer algumas perguntas rapidas para coletar informacoes essenciais:'
         : 'Entendido. Vou registrar esse problema e ja envio orientacoes basicas.',
     };
-    setMessages((prev) => [...prev, ack, botIntro]);
-    if (flow.prompts.length) {
-      askPrompt(flow.prompts[0]);
-    } else {
-      finalizeStructuredTriage(flow, {}, issue);
-    }
+    setMessages((prev) => [...prev, ack]);
+    pushBotMessagesWithTyping(
+      [botIntro],
+      undefined,
+      () => {
+        if (flow.prompts.length) {
+          askPrompt(flow.prompts[0]);
+        } else {
+          finalizeStructuredTriage(flow, {}, issue);
+        }
+      },
+    );
   }
 
   function handlePromptAnswer(answer: string) {
@@ -596,7 +627,7 @@ export default function ChatbotScreen() {
     }
 
     setLoading(true);
-    setIsTyping(true);
+    beginTyping();
     const startedAt = Date.now();
     try {
       const conversation = [...messages, { id: originId, sender: 'user', text: userText }];
@@ -629,7 +660,7 @@ export default function ChatbotScreen() {
       ]);
     } finally {
       setLoading(false);
-      setTimeout(() => setIsTyping(false), 150);
+      endTyping();
     }
   }
 
@@ -678,6 +709,7 @@ export default function ChatbotScreen() {
     setTriageStepIndex(0);
     setTriageComplete(false);
     setShowContextDetails(false);
+    const flow = TRIAGE_FLOWS[categoryId];
     const userAck: Message = {
       id: newMessageId(),
       sender: 'user',
@@ -688,9 +720,8 @@ export default function ChatbotScreen() {
       sender: 'bot',
       text: 'Perfeito, vamos tratar ' + choice.label + '. Escolha abaixo o tipo de problema e responda as perguntas rapidas para direcionarmos melhor.',
     };
-    setMessages((prev) => [...prev, userAck, botAck]);
-    const flow = TRIAGE_FLOWS[categoryId];
-    promptIssueSelection(flow);
+    setMessages((prev) => [...prev, userAck]);
+    pushBotMessagesWithTyping([botAck], undefined, () => promptIssueSelection(flow));
   }
 
   async function escalate() {
@@ -1226,7 +1257,3 @@ const styles = StyleSheet.create({
   botListItem: { flexDirection: 'row', alignItems: 'flex-start', gap: 6 },
   botBullet: { color: colors.textMuted, fontSize: 12, lineHeight: 18 },
 });
-
-
-
-

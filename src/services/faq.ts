@@ -9,45 +9,63 @@ export type FaqArticle = {
   lastUpdated?: string; // ISO
 };
 
-
 const localFaq: FaqArticle[] = [
   {
     id: 'faq-acesso-redefinir-senha',
     title: 'Como redefinir minha senha de rede/AD',
     category: 'Acesso',
     content:
-      'Passos para redefinir sua senha:\n1) Acesse o portal de credenciais (Ctrl+Alt+Del em Windows logado).\n2) Clique em "Alterar uma senha".\n3) Informe a senha atual e a nova senha (mínimo 8 caracteres, letras e números).\n4) Reinicie a sessão. Se falhar, contate o suporte.',
-    tags: ['senha', 'bloqueio', 'login'],
+      'Passo a passo para recuperar acesso:\n' +
+      '1) Conecte-se na rede corporativa (ou VPN) e pressione Ctrl+Alt+Del no Windows.\n' +
+      '2) Selecione "Alterar uma senha" e informe a senha atual e a nova senha.\n' +
+      '3) Use uma senha forte: mínimo 8 caracteres com maiúsculas, minúsculas, número e símbolo.\n' +
+      '4) Após alterar, bloqueie (Win+L) e desbloqueie o computador para replicar no domínio.\n' +
+      '5) Se aparecer bloqueio, aguarde 15 minutos e tente de novo. Persistindo, abra chamado com print do erro.',
+    tags: ['senha', 'bloqueio', 'login', 'ad'],
   },
   {
     id: 'faq-rede-sem-internet',
-    title: 'Sem internet no Wi‑Fi da empresa',
+    title: 'Sem internet no Wi-Fi da empresa',
     category: 'Rede',
     content:
-      'Diagnóstico rápido:\n1) Verifique se o Wi‑Fi está ativado.\n2) Reinicie o roteador pessoal (se home office).\n3) Esqueça a rede e reconecte.\n4) Teste em outra rede.\nSe persistir, informe SSID e erro exibido.',
-    tags: ['wifi', 'rede', 'vpn'],
+      'Checklist rápido de rede:\n' +
+      '1) Confirme Wi-Fi ligado e modo avião desligado. Desconecte/reconecte à rede corporativa.\n' +
+      '2) Se estiver em home office, reinicie o roteador e o computador. Teste outra rede (ex.: hotspot).\n' +
+      '3) Esqueça a rede e refaça o login com usuário/senha corretos; confirme se a VPN não está bloqueando.\n' +
+      '4) No Windows, rode "Solucionar problemas de rede" e verifique se há proxy configurado.\n' +
+      '5) Sem sucesso: anote SSID, mensagem exibida, hora do teste e abra um chamado.',
+    tags: ['wifi', 'rede', 'vpn', 'conexão'],
   },
   {
     id: 'faq-windows-lento',
     title: 'Windows lento ou travando',
     category: 'Software',
     content:
-      'Sugerimos:\n1) Reiniciar o equipamento.\n2) Verificar CPU/Memória/Disco no Gerenciador de Tarefas.\n3) Desativar inicialização de apps não essenciais.\n4) Concluir atualizações pendentes.\nSe não resolver, abra um chamado.',
-    tags: ['windows', 'desempenho'],
+      'Como melhorar o desempenho:\n' +
+      '1) Reinicie o equipamento e feche apps pesados no Gerenciador de Tarefas (CPU/Memória/Disco altos).\n' +
+      '2) Desative inicialização automática de programas não essenciais (Gerenciador de Tarefas > Inicializar).\n' +
+      '3) Limpe arquivos temporários e garanta pelo menos 10 GB livres em disco.\n' +
+      '4) Instale atualizações pendentes do Windows e do antivírus, depois reinicie novamente.\n' +
+      '5) Se continuar lento, registre hora, app afetado, prints do uso de recursos e abra chamado.',
+    tags: ['windows', 'desempenho', 'lento', 'travando'],
   },
   {
     id: 'faq-impressora-nao-imprime',
     title: 'Impressora não imprime',
     category: 'Hardware',
     content:
-      'Cheque:\n1) Cabos/energia.\n2) Fila de impressão pausada.\n3) Drivers instalados.\n4) Teste com outra impressora.\nPersistindo, anexe erro exibido e modelo.',
-    tags: ['impressora', 'hardware'],
+      'Verificações para voltar a imprimir:\n' +
+      '1) Confirme energia, cabos, papel e insumos (tinta/toner). Veja se há alertas no visor.\n' +
+      '2) Abra a fila de impressão: limpe trabalhos travados e certifique-se de que não está pausada.\n' +
+      '3) Imprima uma página de teste. Se falhar, reinstale/atualize o driver da impressora.\n' +
+      '4) Teste a impressora em outro computador ou conecte outra impressora ao seu para isolar o problema.\n' +
+      '5) Ainda sem imprimir? Informe modelo, IP (se houver), cabo usado e a mensagem de erro ao suporte.',
+    tags: ['impressora', 'hardware', 'fila', 'driver'],
   },
 ];
 
 export async function getFaq(): Promise<FaqArticle[]> {
   try {
-    // Se existir endpoint no backend, use-o. Senão, caia para local.
     const items = await getJson<FaqArticle[]>('/faq');
     if (Array.isArray(items) && items.length) return items;
     return localFaq;

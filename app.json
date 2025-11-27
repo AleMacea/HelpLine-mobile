@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "helpdesk-mobile",
-    "slug": "helpdesk-mobile",
+    "name": "Helpline",
+    "slug": "helpline-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/helpline-logo.png",
@@ -43,8 +43,14 @@
       ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
-    }
+      "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "3d3fc865-9a94-4913-b335-d87c765733b2"
+      }
+    },
+    "owner": "xandev"
   }
 }

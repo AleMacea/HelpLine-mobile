@@ -1,10 +1,20 @@
-import { setToken } from '@/src/services/api';
+﻿import { setToken } from '@/src/services/api';
 import { loginUser } from '@/src/services/auth';
 import { colors } from '@/src/theme';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Image, KeyboardAvoidingView, Platform, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function LoginScreen() {
@@ -21,7 +31,7 @@ export default function LoginScreen() {
     try {
       const resp = await loginUser({ email, password });
       await setToken(resp.token);
-      router.replace('/(tabs)/artigos');
+      router.replace('/home');
     } catch (e: any) {
       const friendly = e?.userMessage || '';
       if (friendly) setErro(friendly);
@@ -32,72 +42,86 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
-      <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-        <View>
-          <Image
-            source={require('../assets/images/helpline-logo.png')}
-            style={styles.logo}
-            accessibilityRole="image"
-            accessibilityLabel="Helpline"
-          />
-          <Text style={styles.title}>Bem-vindo</Text>
-          <Text style={styles.subtitle}>Acesse sua conta para continuar</Text>
-
-          <Text style={styles.label}>E-mail</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="seu@email.com"
-            placeholderTextColor={colors.textMuted}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          <Text style={styles.label}>Senha</Text>
-          <View style={styles.inputWrapper}>
-            <TextInput
-              style={[styles.input, styles.inputWithIcon]}
-              placeholder="********"
-              placeholderTextColor={colors.textMuted}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={!showPwd}
-              returnKeyType="go"
-              onSubmitEditing={handleLogin}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView style={styles.keyboard} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+        >
+          <View>
+            <Image
+              source={require('../assets/images/helpline-logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityRole="image"
+              accessibilityLabel="Helpline"
             />
-            <TouchableOpacity
-              style={styles.eyeInside}
-              onPress={() => setShowPwd((s) => !s)}
-              accessibilityLabel={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
-            >
-              <Ionicons
-                name={showPwd ? 'eye-off-outline' : 'eye-outline'}
-                size={22}
-                color={colors.warning}
+            <Text style={styles.title}>Bem-vindo</Text>
+            <Text style={styles.subtitle}>Acesse sua conta para continuar</Text>
+
+            <Text style={styles.label}>E-mail</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="seu@email.com"
+              placeholderTextColor={colors.textMuted}
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            <Text style={styles.label}>Senha</Text>
+            <View style={styles.inputWrapper}>
+              <TextInput
+                style={[styles.input, styles.inputWithIcon]}
+                placeholder="********"
+                placeholderTextColor={colors.textMuted}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!showPwd}
+                returnKeyType="go"
+                onSubmitEditing={handleLogin}
               />
+              <TouchableOpacity
+                style={styles.eyeInside}
+                onPress={() => setShowPwd((s) => !s)}
+                accessibilityLabel={showPwd ? 'Ocultar senha' : 'Mostrar senha'}
+              >
+                <Ionicons name={showPwd ? 'eye-off-outline' : 'eye-outline'} size={22} color={colors.warning} />
+              </TouchableOpacity>
+            </View>
+
+            {erro && <Text style={{ color: '#DC2626', textAlign: 'center', marginBottom: 8 }}>{erro}</Text>}
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleLogin}
+              disabled={loading}
+              accessibilityRole="button"
+              accessibilityLabel="Entrar"
+            >
+              <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => router.push('/register')}
+              accessibilityRole="button"
+              accessibilityLabel="Ir para cadastro"
+            >
+              <Text style={styles.link}>Nao tem uma conta? Cadastre-se</Text>
             </TouchableOpacity>
           </View>
-
-          {erro && <Text style={{ color: '#DC2626', textAlign: 'center', marginBottom: 8 }}>{erro}</Text>}
-          <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}
-            accessibilityRole="button" accessibilityLabel="Entrar">
-            <Text style={styles.buttonText}>{loading ? 'Entrando...' : 'Entrar'}</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => router.push('/register')} accessibilityRole="button" accessibilityLabel="Ir para cadastro">
-            <Text style={styles.link}>Não tem uma conta? Cadastre-se</Text>
-          </TouchableOpacity>
-        </View>
+        </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bg, padding: 24, justifyContent: 'center' },
-  logo: { width: 120, height: 120, alignSelf: 'center', marginBottom: 12, resizeMode: 'contain' },
+  safeArea: { flex: 1, backgroundColor: colors.bg },
+  keyboard: { flex: 1 },
+  content: { flexGrow: 1, padding: 24, justifyContent: 'center', backgroundColor: colors.bg },
+  logo: { width: 120, height: 120, alignSelf: 'center', marginBottom: 12 },
   title: { fontSize: 28, fontWeight: 'bold', marginBottom: 8, textAlign: 'center', color: colors.primary },
   subtitle: { fontSize: 16, color: colors.textMuted, marginBottom: 24, textAlign: 'center' },
   label: { fontSize: 16, marginBottom: 6, color: '#374151' },

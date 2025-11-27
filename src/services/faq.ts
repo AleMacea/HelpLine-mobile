@@ -1,3 +1,5 @@
+import { getJson } from './api';
+
 export type FaqArticle = {
   id: string;
   title: string;
@@ -7,7 +9,6 @@ export type FaqArticle = {
   lastUpdated?: string; // ISO
 };
 
-import { getJson } from './api';
 
 const localFaq: FaqArticle[] = [
   {

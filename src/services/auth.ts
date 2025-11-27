@@ -20,6 +20,7 @@ export async function registerUser(params: {
   email: string;
   password: string;
   department?: string;
+  inviteToken?: string;
   role?: 'user';
   origin?: 'mobile';
 }) {
@@ -31,6 +32,9 @@ export async function registerUser(params: {
     role: 'User',
     origin: params.origin ?? 'mobile',
   };
+  if (params.inviteToken) {
+    body.inviteToken = params.inviteToken;
+  }
   return postJson<typeof body, AuthResponse>('/auth/register', body);
 }
 

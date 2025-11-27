@@ -1,33 +1,10 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { Slot } from 'expo-router';
 
-import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
-import HomeScreen from '../screens/HomeScreen';
-
-const Stack = createNativeStackNavigator();
-
+/**
+ * Mantido apenas para compatibilidade com importa??es antigas.
+ * O Expo Router cuida da navega??o; este componente apenas delega ao Slot.
+ */
 export default function AppNavigator() {
-  return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen
-          name="Login"
-          component={LoginScreen}
-          options={{ title: 'Login' }}
-        />
-        <Stack.Screen
-          name="Register"
-          component={RegisterScreen}
-          options={{ title: 'Cadastro' }}
-        />
-        <Stack.Screen
-          name="Home"
-          component={HomeScreen}
-          options={{ title: 'Início' }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
+  return <Slot />;
 }

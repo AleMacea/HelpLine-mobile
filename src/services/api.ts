@@ -1,7 +1,24 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Base da API configurada no .env (EXPO_PUBLIC_API_BASE)
-export const API_BASE = process.env.EXPO_PUBLIC_API_BASE || '';
+const rawApiBase = process.env.EXPO_PUBLIC_API_BASE || '';
+export const API_BASE = normalizeApiBase(rawApiBase);
+
+function normalizeApiBase(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (!/^https?:\/\//i.test(trimmed)) {
+    console.warn('EXPO_PUBLIC_API_BASE deve incluir http:// ou https://. Valor atual:', trimmed);
+    return '';
+  }
+  return trimmed.replace(/\/+$/, '');
+}
+
+function ensurePath(path: string) {
+  const trimmed = (path || '').trim();
+  if (!trimmed) return '/';
+  return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
+}
 
 export class ApiError extends Error {
   status: number;
@@ -70,11 +87,14 @@ function toUserMessage(status: number, path: string, details: any): string {
   return 'Ocorreu um erro. Tente novamente.';
 }
 
-async function authFetch(path: string, init?: RequestInit) {
+type AuthFetchResult = { res: Response; path: string };
+
+async function authFetch(path: string, init?: RequestInit): Promise<AuthFetchResult> {
   if (!API_BASE) throw new ApiError({ message: 'api-base-missing', status: 0, userMessage: 'Configuração de API ausente.' });
+  const normalizedPath = ensurePath(path);
   try {
-    const res = await fetch(`${API_BASE}${path}`, await withAuth(init));
-    return res;
+    const res = await fetch(`${API_BASE}${normalizedPath}`, await withAuth(init));
+    return { res, path: normalizedPath };
   } catch (err: any) {
     throw new ApiError({ message: err?.message || 'network-error', status: 0, userMessage: 'Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.' });
   }
@@ -89,25 +109,25 @@ async function ensureOk(path: string, res: Response) {
 }
 
 export async function getJson<T>(path: string): Promise<T> {
-  const res = await authFetch(path);
-  await ensureOk(path, res);
+  const { res, path: normalizedPath } = await authFetch(path);
+  await ensureOk(normalizedPath, res);
   return res.json() as Promise<T>;
 }
 
 export async function postJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  const res = await authFetch(path, { method: 'POST', body: JSON.stringify(body) });
-  await ensureOk(path, res);
+  const { res, path: normalizedPath } = await authFetch(path, { method: 'POST', body: JSON.stringify(body) });
+  await ensureOk(normalizedPath, res);
   return res.json() as Promise<TRes>;
 }
 
 export async function patchJson<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
-  const res = await authFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
-  await ensureOk(path, res);
+  const { res, path: normalizedPath } = await authFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
+  await ensureOk(normalizedPath, res);
   return res.json() as Promise<TRes>;
 }
 
 export async function deleteJson<TRes>(path: string): Promise<TRes> {
-  const res = await authFetch(path, { method: 'DELETE' });
-  await ensureOk(path, res);
+  const { res, path: normalizedPath } = await authFetch(path, { method: 'DELETE' });
+  await ensureOk(normalizedPath, res);
   return res.json() as Promise<TRes>;
 }

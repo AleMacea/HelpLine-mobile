@@ -1,10 +1,12 @@
+import { API_BASE } from './api';
+
 export type ChatMessage = {
   role: 'user' | 'assistant' | 'system';
   content: string;
 };
 
-// Base do backend (quando houver). Use EXPO_PUBLIC_API_BASE no app.json/env.
-const API_BASE = (typeof process !== 'undefined' && (process as any).env?.EXPO_PUBLIC_API_BASE) || '';
+const CHAT_ENDPOINT = API_BASE ? `${API_BASE}/chat` : '';
+let chatEndpointUnavailable = false;
 
 // Resposta de desenvolvimento quando não há backend
 function respostaMock(mensagens: ChatMessage[]): string {
@@ -23,17 +25,20 @@ function respostaMock(mensagens: ChatMessage[]): string {
 }
 
 export async function enviarParaChatGPT(mensagens: ChatMessage[]): Promise<string> {
-  if (!API_BASE) {
-    // Sem backend: retorna uma resposta mock para fluxo de desenvolvimento
+  if (!CHAT_ENDPOINT || chatEndpointUnavailable) {
     return Promise.resolve(respostaMock(mensagens));
   }
 
   try {
-    const resposta = await fetch(`${API_BASE}/chat`, {
+    const resposta = await fetch(CHAT_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: mensagens }),
     });
+    if (resposta.status === 404) {
+      chatEndpointUnavailable = true;
+      return respostaMock(mensagens);
+    }
     if (!resposta.ok) {
       return respostaMock(mensagens);
     }
@@ -42,7 +47,15 @@ export async function enviarParaChatGPT(mensagens: ChatMessage[]): Promise<strin
     if (!conteudo) return respostaMock(mensagens);
     return String(conteudo).trim();
   } catch (e) {
+    console.warn('Falha ao consultar /chat, usando fallback local', e);
     return respostaMock(mensagens);
   }
 }
+
+
+
+
+
+
+
 
